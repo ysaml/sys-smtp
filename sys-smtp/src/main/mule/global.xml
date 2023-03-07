@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation=" http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd  http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd">
+    <http:listener-config name="sys-smtp-api-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8081" />
+    </http:listener-config>
+    <email:smtp-config name="Email_SMTP">
+        <email:smtp-connection host="${smtp.host}" port="${smtp.port}" user="${smtp.username}" password="${smtp.password}">
+            <email:properties>
+                <email:property key="mail.smtp.starttls.enable" value="true" />
+            </email:properties>
+        </email:smtp-connection>
+    </email:smtp-config>
+    <apikit:config name="sys-smtp-api-config" api="resource::8b12e0c7-58c1-469d-9261-46a002ed8b12:sys-smtp-api:1.0.4:raml:zip:sys-smtp-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <global-property doc:name="Global Property" doc:id="12ab7a12-c17a-4d81-9769-d608e887712c" name="env" value="miles" />
+    <configuration-properties doc:name="Configuration properties" doc:id="982f1bb3-7d8c-41c6-8c9b-6eba1527221b" file="config-${env}.yaml" />
+</mule>

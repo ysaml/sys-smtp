@@ -1,0 +1,10 @@
+{
+  "salutation": "Good day!",
+  "subject": "Email Subject",
+  "body": "Email Body",
+  "closing": "Have a nice one",
+  "attachment": {
+    "filename": "test",
+    "file": "test.csv"
+  }
+}

@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation=" http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd  http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd">
+    <flow name="sys-smtp-api-main">
+        <http:listener path="/api/*" config-ref="sys-smtp-api-httpListenerConfig">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="sys-smtp-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request",
+	error: error.detailedDescription}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[400]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found",
+	error: error.detailedDescription}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[404]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed",
+	error: error.detailedDescription}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[405]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable",
+	error: error.detailedDescription}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[406]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type",
+	error: error.detailedDescription
+}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[415]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented",
+	error: error.detailedDescription}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[501]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="sys-smtp-api-console">
+        <http:listener path="/console/*" config-ref="sys-smtp-api-httpListenerConfig">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="sys-smtp-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="get:\emails:sys-smtp-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  emails: [
+    "miles@test.com", 
+    "eugene@test.com"
+  ]
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\emails:application\json:sys-smtp-api-config">
+        <set-variable value="" doc:name="emailContent" doc:id="aeef1083-a268-4e2f-bdeb-931ce9a1f007" variableName="emailContent" />
+        <set-variable value="#[payload.subject]" doc:name="emailSubject" doc:id="aef1804d-38ad-4520-92f3-0080bb2149c0" variableName="emailSubject" />
+        <ee:transform doc:name="Transform to JSON" doc:id="50bedc3f-c7a7-4557-a926-364b3f4484bd" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<parse-template doc:name="Email body content" doc:id="84e54450-6761-4479-893e-839338901259" target="emailContent">
+            <content>&lt;p&gt;#[payload.salutation replace'\&quot;' with ('') default '']&lt;/p&gt;
+&lt;p&gt;#[payload.body replace'\&quot;' with ('')]&lt;/p&gt;
+&lt;p&gt;#[payload.closing replace'\&quot;' with ('') default '']&lt;/p&gt;
+&lt;p&gt;#[now()]&lt;/p&gt;</content>
+        </parse-template>
+        <email:send fromAddress="milesbacolod1@gmail.com" subject="#[vars.emailSubject]" doc:name="email only" config-ref="Email_SMTP" ccAddresses='#[attributes.queryParams.cc splitBy(",")]' doc:id="2db13478-39d0-4e45-94fe-1a699e8c6ea9" bccAddresses='#[attributes.queryParams.bcc splitBy(",")]' toAddresses='#[attributes.queryParams.recipient splitBy(",")]'>
+            <email:body contentType="text/html">
+                <email:content><![CDATA[#[vars.emailContent]]]></email:content>
+            </email:body>
+        </email:send>
+		<ee:transform doc:name="Output message" doc:id="f37c502d-e633-42c8-b419-2ecc2b1c1c12">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "email sent",
+	"id" : correlationId,
+	"timeStamp" : now()
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="7e5c4994-29d1-4c0e-9493-5899dbf6aa5c" message="#[attributes.queryParams.recipient]" />
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="960a9c4e-2264-4c5d-bd2c-5ef4c88ad575" type="MULE:EXPRESSION">
+				<flow-ref doc:name="send error email" doc:id="0f0ac4cf-62a0-4a15-9691-224892f8fa7c" name="send-error-email" />
+			</on-error-propagate>
+		</error-handler>
+    </flow>
+    <flow name="post:\emails\attachcsv:application\json:sys-smtp-api-config">
+        <set-variable value="" doc:name="emailContent" doc:id="cfbb2973-d58b-45dd-8d9a-1ea6d6fd9eb0" variableName="emailContent" />
+		<set-variable value="#[payload.subject]" doc:name="emailSubject" doc:id="3d994af5-6970-4c76-8f73-cd81ceac3b66" variableName="emailSubject" />
+		<ee:transform doc:name="Transform to JSON" doc:id="69815250-fe70-4a8c-bb5b-7c48a0b69438">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<set-variable value="#[payload.attachment]" doc:name="fileAttachment" doc:id="5bf03c5a-930b-4f24-af6d-df04e979e054" variableName="fileAttachment" />
+		<parse-template doc:name="Email body content" doc:id="f788e237-f37a-4e9c-b6bc-74c05c33c8d8" target="emailContent">
+			<content>&lt;p&gt;#[payload.salutation replace'\&quot;' with ('') default '']&lt;/p&gt;
+&lt;p&gt;#[payload.body replace'\&quot;' with ('')]&lt;/p&gt;
+&lt;p&gt;#[payload.closing replace'\&quot;' with ('') default '']&lt;/p&gt;
+&lt;p&gt;#[now()]&lt;/p&gt;</content>
+		</parse-template>
+		<email:send doc:name="email with csv" doc:id="f0c3e0ec-8222-470a-a980-588ed9df0ea4" config-ref="Email_SMTP" fromAddress="milesbacolod1@gmail.com" subject="#[vars.emailSubject]" toAddresses='#[attributes.queryParams.recipient splitBy(",")]' ccAddresses='#[attributes.queryParams.cc splitBy(",")]' bccAddresses='#[attributes.queryParams.bcc splitBy(",")]'>
+			<email:body contentType="text/html">
+				<email:content><![CDATA[#[vars.emailContent]]]></email:content>
+			</email:body>
+			<email:attachments ><![CDATA[#[(vars.fileAttachment.filename) : vars.fileAttachment.file]]]></email:attachments>
+		</email:send>
+        <ee:transform doc:name="Output message" doc:id="bb04cde2-df11-4aa7-9846-9d9e77df5899">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "email sent",
+	"id" : correlationId,
+	"timeStamp" : now()
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="3e207fd8-337b-4a68-a3bc-d5204fdddb1b" />
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="2879ff4f-2fd6-4099-9710-f068f9168894" type="MULE:EXPRESSION" >
+				<flow-ref doc:name="send error email" doc:id="9fd0e586-1e2e-4ace-9186-de7d006fa189" name="send-error-email"/>
+			</on-error-propagate>
+		</error-handler>
+    </flow>
+	<flow name="send-error-email" doc:id="a2c301ab-6571-45e8-8b6b-6678bde27379" >
+		<parse-template doc:name="Parse Template" doc:id="be6f4688-b50e-4caf-a246-dce45c5b6918" target="emailContent">
+					<content>&lt;h1&gt;ERROR:#[error.errorType.identifier]&lt;/h1&gt;
+&lt;p&gt;#[error.detailedDescription]&lt;/p&gt;</content>
+				</parse-template>
+		<email:send doc:name="email only" doc:id="c8dbcb8c-edc2-4d04-a577-bd8f9714b5d2" config-ref="Email_SMTP" fromAddress="milesbacolod1@gmail.com" subject="#[vars.emailSubject]" toAddresses='#[attributes.queryParams.recipient splitBy(",")]' ccAddresses='#[attributes.queryParams.cc splitBy(",")]' bccAddresses='#[attributes.queryParams.bcc splitBy(",")]'>
+					<email:body contentType="text/html">
+						<email:content><![CDATA[#[vars.emailContent]]]></email:content>
+					</email:body>
+				</email:send>
+		<ee:transform doc:name="Error Message" doc:id="3ef99136-e0e4-49ea-8605-a82a972f5228">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": error.errorMessage,
+	"error" : error.detailedDescription,
+	"timeStamp" : now()
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="f2460642-d52f-4418-8434-b983a52175bd" message="#[attributes.queryParams.recipient]" />
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="9779aeef-65a4-4211-8bd3-925daadb0ec0" type="ANY" >
+				<ee:transform doc:name="Transform Message" doc:id="bf23e39b-1141-4189-a16c-c905006e694d" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message : error.detailedDescription
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+</mule>

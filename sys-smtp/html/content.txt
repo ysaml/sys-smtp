@@ -1,0 +1,3 @@
+<h1>Creating Email Magic</h1>
+<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. In tempus adipiscing felis, sit amet blandit ipsum volutpat sed. Morbi porttitor, eget accumsan et dictum, nisi libero ultricies ipsum, posuere neque at erat.</p>
+<p><a href="http://www.example.com">In tempus felis blandit</a></p>

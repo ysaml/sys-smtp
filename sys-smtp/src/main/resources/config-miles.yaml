@@ -1,0 +1,35 @@
+http:
+  port: "8081"
+
+sfdc:
+  username: "eugene.bacolod@mulesoft.com"
+  password: "Zoidz123"
+  token: "EQWOD71oHnUjsZn7HBdCJv36"
+
+file:
+  caseDumpDir: "C:/Users/MILES/Downloads/RebexTinySftpServer-Binaries-Latest/data"
+  
+sftp:
+  host: "localhost"
+  port: "22"
+  username: "MilesOng"
+  password: "Zoidz123"
+  
+smtp:
+  host: "smtp.gmail.com"
+  port: "587"
+  username: "milesbacolod1@gmail.com"
+  password: "zwydjjjkxkmaldru"
+  
+procCase:
+  host: "proc-case.us-e2.cloudhub.io"
+  port: "80"
+  basepath: "/"
+  protocol: "HTTP"
+  
+db:
+  host: "mudb.learn.mulesoft.com"
+  port: "3306"
+  user: "mule"
+  password: "mule"
+  database: "training"
