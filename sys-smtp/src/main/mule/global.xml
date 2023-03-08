@@ -10,7 +10,7 @@
             </email:properties>
         </email:smtp-connection>
     </email:smtp-config>
-    <apikit:config name="sys-smtp-api-config" api="resource::8b12e0c7-58c1-469d-9261-46a002ed8b12:sys-smtp-api:1.0.4:raml:zip:sys-smtp-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <apikit:config name="sys-smtp-api-config" api="resource::8b12e0c7-58c1-469d-9261-46a002ed8b12:sys-smtp-api:1.0.5:raml:zip:sys-smtp-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
     <global-property doc:name="Global Property" doc:id="12ab7a12-c17a-4d81-9769-d608e887712c" name="env" value="miles" />
     <configuration-properties doc:name="Configuration properties" doc:id="982f1bb3-7d8c-41c6-8c9b-6eba1527221b" file="config-${env}.yaml" />
 </mule>

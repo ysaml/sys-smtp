@@ -144,7 +144,58 @@ output application/json
     <flow name="post:\emails:application\json:sys-smtp-api-config">
         <set-variable value="" doc:name="emailContent" doc:id="aeef1083-a268-4e2f-bdeb-931ce9a1f007" variableName="emailContent" />
         <set-variable value="#[payload.subject]" doc:name="emailSubject" doc:id="aef1804d-38ad-4520-92f3-0080bb2149c0" variableName="emailSubject" />
-        <ee:transform doc:name="Transform to JSON" doc:id="50bedc3f-c7a7-4557-a926-364b3f4484bd" >
+        <ee:transform doc:name="Transform to JSON" doc:id="50bedc3f-c7a7-4557-a926-364b3f4484bd">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+        <parse-template doc:name="Email body content" doc:id="84e54450-6761-4479-893e-839338901259" target="emailContent">
+            <content>&lt;p&gt;#[payload.salutation replace'\"' with ('') default '']&lt;/p&gt;
+&lt;p&gt;#[payload.body replace'\"' with ('')]&lt;/p&gt;
+&lt;p&gt;#[payload.closing replace'\"' with ('') default '']&lt;/p&gt;
+&lt;p&gt;#[now()]&lt;/p&gt;</content>
+        </parse-template>
+        <email:send fromAddress="milesbacolod1@gmail.com" subject="#[vars.emailSubject]" doc:name="email only" config-ref="Email_SMTP" ccAddresses="#[attributes.queryParams.cc splitBy(&quot;,&quot;)]" doc:id="2db13478-39d0-4e45-94fe-1a699e8c6ea9" bccAddresses="#[attributes.queryParams.bcc splitBy(&quot;,&quot;)]" toAddresses="#[attributes.queryParams.recipient splitBy(&quot;,&quot;)]">
+            <email:body contentType="text/html">
+                <email:content><![CDATA[#[vars.emailContent]]]></email:content>
+            </email:body>
+        </email:send>
+        <ee:transform doc:name="Output message" doc:id="f37c502d-e633-42c8-b419-2ecc2b1c1c12">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "email sent",
+	"id" : correlationId,
+	"timeStamp" : now()
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+        <logger level="INFO" doc:name="Logger" doc:id="7e5c4994-29d1-4c0e-9493-5899dbf6aa5c" message="#[attributes.queryParams.recipient]" />
+        <error-handler>
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="960a9c4e-2264-4c5d-bd2c-5ef4c88ad575" type="MULE:EXPRESSION">
+                <flow-ref doc:name="send error email" doc:id="0f0ac4cf-62a0-4a15-9691-224892f8fa7c" name="send-error-email" />
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+        <flow name="post:\emails\attachcsv:application\json:sys-smtp-api-config">
+        <ee:transform doc:name="Transform to DW" doc:id="ee137c5c-3e4e-49f6-8dda-93630761d8e8" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/dw
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<set-variable value="" doc:name="emailContent" doc:id="16919196-3e20-48c9-b836-c36792e185ac" variableName="emailContent" />
+		<set-variable value="#[payload.parts.subject.content]" doc:name="emailSubject" doc:id="a63bae43-4c6e-43d7-80d1-6e6840050d8c" variableName="emailSubject" />
+		<set-variable value='#[payload.parts.attachment.content]' doc:name="attachment" doc:id="fadc3eb1-5688-4a19-80ff-b700708e3d48" variableName="attachmentFile" mimeType="application/csv"/>
+		<set-variable value="#[(payload.parts.attachment.headers.'Content-Disposition'.filename as String)]" doc:name="attachmentName" doc:id="1abf3aa0-15c5-4e78-b6e7-b13fb43b29e4" variableName="attachmentName"/>
+		<ee:transform doc:name="Transform to JSON" doc:id="24beded1-2688-4c40-9eb5-7f3b99ccfde2" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/java
@@ -152,92 +203,50 @@ output application/java
 payload]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
-		<parse-template doc:name="Email body content" doc:id="84e54450-6761-4479-893e-839338901259" target="emailContent">
-            <content>&lt;p&gt;#[payload.salutation replace'\&quot;' with ('') default '']&lt;/p&gt;
-&lt;p&gt;#[payload.body replace'\&quot;' with ('')]&lt;/p&gt;
-&lt;p&gt;#[payload.closing replace'\&quot;' with ('') default '']&lt;/p&gt;
+		<parse-template doc:name="Email body content" doc:id="4ee46161-c403-4f2a-8a00-76ae6c36843a" target="emailContent">
+            <content>&lt;p&gt;#[payload.parts.salutation.content replace'\&quot;' with ('') default '']&lt;/p&gt;
+&lt;p&gt;#[payload.parts.body.content replace'\&quot;' with ('')]&lt;/p&gt;
+&lt;p&gt;#[payload.parts.closing.content replace'\&quot;' with ('') default '']&lt;/p&gt;
 &lt;p&gt;#[now()]&lt;/p&gt;</content>
         </parse-template>
-        <email:send fromAddress="milesbacolod1@gmail.com" subject="#[vars.emailSubject]" doc:name="email only" config-ref="Email_SMTP" ccAddresses='#[attributes.queryParams.cc splitBy(",")]' doc:id="2db13478-39d0-4e45-94fe-1a699e8c6ea9" bccAddresses='#[attributes.queryParams.bcc splitBy(",")]' toAddresses='#[attributes.queryParams.recipient splitBy(",")]'>
+        <email:send fromAddress="milesbacolod1@gmail.com" subject="#[vars.emailSubject]" doc:name="email only" config-ref="Email_SMTP" ccAddresses='#[attributes.queryParams.cc splitBy(",")]' doc:id="80abb348-000d-4e6b-8b9e-836afef3a8e4" toAddresses='#[attributes.queryParams.recipient splitBy(",")]'>
+            <email:body contentType="text/html">
+                <email:content><![CDATA[#[vars.emailContent]]]></email:content>
+            </email:body>
+			<email:attachments ><![CDATA[#[(vars.attachmentName) : vars.attachmentFile]]]></email:attachments>
+        </email:send>
+		<ee:transform doc:name="Output message" doc:id="8012f36f-d201-4334-b587-c8df05eee3b4">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "email sent",
+	"id" : correlationId,
+	"timeStamp" : now()
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="4d850f1a-1397-4ed3-822b-9602129493c3" message="#[attributes.queryParams.recipient]" />
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="2be2559d-a418-47f0-a775-1884298db3e7" type="MULE:EXPRESSION" >
+				<flow-ref doc:name="send error email" doc:id="a65a99d5-24f3-4e15-b491-eb3f91726c02" name="send-error-email"/>
+			</on-error-propagate>
+		</error-handler>
+    </flow>
+    <flow name="send-error-email" doc:id="a2c301ab-6571-45e8-8b6b-6678bde27379">
+        <parse-template doc:name="Parse Template" doc:id="be6f4688-b50e-4caf-a246-dce45c5b6918" target="emailContent">
+            <content>&lt;h1&gt;ERROR:#[error.errorType.identifier]&lt;/h1&gt;
+&lt;p&gt;#[error.detailedDescription]&lt;/p&gt;</content>
+        </parse-template>
+        <email:send doc:name="email only" doc:id="c8dbcb8c-edc2-4d04-a577-bd8f9714b5d2" config-ref="Email_SMTP" fromAddress="milesbacolod1@gmail.com" subject="#[vars.emailSubject]" toAddresses="#[attributes.queryParams.recipient splitBy(&quot;,&quot;)]" ccAddresses="#[attributes.queryParams.cc splitBy(&quot;,&quot;)]" bccAddresses="#[attributes.queryParams.bcc splitBy(&quot;,&quot;)]">
             <email:body contentType="text/html">
                 <email:content><![CDATA[#[vars.emailContent]]]></email:content>
             </email:body>
         </email:send>
-		<ee:transform doc:name="Output message" doc:id="f37c502d-e633-42c8-b419-2ecc2b1c1c12">
-			<ee:message>
-				<ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{
-	"message": "email sent",
-	"id" : correlationId,
-	"timeStamp" : now()
-}]]></ee:set-payload>
-			</ee:message>
-		</ee:transform>
-		<logger level="INFO" doc:name="Logger" doc:id="7e5c4994-29d1-4c0e-9493-5899dbf6aa5c" message="#[attributes.queryParams.recipient]" />
-		<error-handler >
-			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="960a9c4e-2264-4c5d-bd2c-5ef4c88ad575" type="MULE:EXPRESSION">
-				<flow-ref doc:name="send error email" doc:id="0f0ac4cf-62a0-4a15-9691-224892f8fa7c" name="send-error-email" />
-			</on-error-propagate>
-		</error-handler>
-    </flow>
-    <flow name="post:\emails\attachcsv:application\json:sys-smtp-api-config">
-        <set-variable value="" doc:name="emailContent" doc:id="cfbb2973-d58b-45dd-8d9a-1ea6d6fd9eb0" variableName="emailContent" />
-		<set-variable value="#[payload.subject]" doc:name="emailSubject" doc:id="3d994af5-6970-4c76-8f73-cd81ceac3b66" variableName="emailSubject" />
-		<ee:transform doc:name="Transform to JSON" doc:id="69815250-fe70-4a8c-bb5b-7c48a0b69438">
-			<ee:message>
-				<ee:set-payload><![CDATA[%dw 2.0
-output application/java
----
-payload]]></ee:set-payload>
-			</ee:message>
-		</ee:transform>
-		<set-variable value="#[payload.attachment]" doc:name="fileAttachment" doc:id="5bf03c5a-930b-4f24-af6d-df04e979e054" variableName="fileAttachment" />
-		<parse-template doc:name="Email body content" doc:id="f788e237-f37a-4e9c-b6bc-74c05c33c8d8" target="emailContent">
-			<content>&lt;p&gt;#[payload.salutation replace'\&quot;' with ('') default '']&lt;/p&gt;
-&lt;p&gt;#[payload.body replace'\&quot;' with ('')]&lt;/p&gt;
-&lt;p&gt;#[payload.closing replace'\&quot;' with ('') default '']&lt;/p&gt;
-&lt;p&gt;#[now()]&lt;/p&gt;</content>
-		</parse-template>
-		<email:send doc:name="email with csv" doc:id="f0c3e0ec-8222-470a-a980-588ed9df0ea4" config-ref="Email_SMTP" fromAddress="milesbacolod1@gmail.com" subject="#[vars.emailSubject]" toAddresses='#[attributes.queryParams.recipient splitBy(",")]' ccAddresses='#[attributes.queryParams.cc splitBy(",")]' bccAddresses='#[attributes.queryParams.bcc splitBy(",")]'>
-			<email:body contentType="text/html">
-				<email:content><![CDATA[#[vars.emailContent]]]></email:content>
-			</email:body>
-			<email:attachments ><![CDATA[#[(vars.fileAttachment.filename) : vars.fileAttachment.file]]]></email:attachments>
-		</email:send>
-        <ee:transform doc:name="Output message" doc:id="bb04cde2-df11-4aa7-9846-9d9e77df5899">
-			<ee:message>
-				<ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{
-	"message": "email sent",
-	"id" : correlationId,
-	"timeStamp" : now()
-}]]></ee:set-payload>
-			</ee:message>
-		</ee:transform>
-		<logger level="INFO" doc:name="Logger" doc:id="3e207fd8-337b-4a68-a3bc-d5204fdddb1b" />
-		<error-handler >
-			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="2879ff4f-2fd6-4099-9710-f068f9168894" type="MULE:EXPRESSION" >
-				<flow-ref doc:name="send error email" doc:id="9fd0e586-1e2e-4ace-9186-de7d006fa189" name="send-error-email"/>
-			</on-error-propagate>
-		</error-handler>
-    </flow>
-	<flow name="send-error-email" doc:id="a2c301ab-6571-45e8-8b6b-6678bde27379" >
-		<parse-template doc:name="Parse Template" doc:id="be6f4688-b50e-4caf-a246-dce45c5b6918" target="emailContent">
-					<content>&lt;h1&gt;ERROR:#[error.errorType.identifier]&lt;/h1&gt;
-&lt;p&gt;#[error.detailedDescription]&lt;/p&gt;</content>
-				</parse-template>
-		<email:send doc:name="email only" doc:id="c8dbcb8c-edc2-4d04-a577-bd8f9714b5d2" config-ref="Email_SMTP" fromAddress="milesbacolod1@gmail.com" subject="#[vars.emailSubject]" toAddresses='#[attributes.queryParams.recipient splitBy(",")]' ccAddresses='#[attributes.queryParams.cc splitBy(",")]' bccAddresses='#[attributes.queryParams.bcc splitBy(",")]'>
-					<email:body contentType="text/html">
-						<email:content><![CDATA[#[vars.emailContent]]]></email:content>
-					</email:body>
-				</email:send>
-		<ee:transform doc:name="Error Message" doc:id="3ef99136-e0e4-49ea-8605-a82a972f5228">
-					<ee:message>
-						<ee:set-payload><![CDATA[%dw 2.0
+        <ee:transform doc:name="Error Message" doc:id="3ef99136-e0e4-49ea-8605-a82a972f5228">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
 {
@@ -245,22 +254,34 @@ output application/json
 	"error" : error.detailedDescription,
 	"timeStamp" : now()
 }]]></ee:set-payload>
-					</ee:message>
-				</ee:transform>
-		<logger level="INFO" doc:name="Logger" doc:id="f2460642-d52f-4418-8434-b983a52175bd" message="#[attributes.queryParams.recipient]" />
-		<error-handler >
-			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="9779aeef-65a4-4211-8bd3-925daadb0ec0" type="ANY" >
-				<ee:transform doc:name="Transform Message" doc:id="bf23e39b-1141-4189-a16c-c905006e694d" >
-					<ee:message >
-						<ee:set-payload ><![CDATA[%dw 2.0
+            </ee:message>
+        </ee:transform>
+        <logger level="INFO" doc:name="Logger" doc:id="f2460642-d52f-4418-8434-b983a52175bd" message="#[attributes.queryParams.recipient]" />
+        <error-handler>
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="9779aeef-65a4-4211-8bd3-925daadb0ec0" type="ANY">
+                <ee:transform doc:name="Transform Message" doc:id="bf23e39b-1141-4189-a16c-c905006e694d">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
 {
 	message : error.detailedDescription
 }]]></ee:set-payload>
-					</ee:message>
-				</ee:transform>
-			</on-error-propagate>
-		</error-handler>
-	</flow>
+                    </ee:message>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="post:\emails\attachcsv:multipart\form-data:sys-smtp-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  message: "email sent."
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
 </mule>

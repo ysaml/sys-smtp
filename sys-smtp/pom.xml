@@ -64,7 +64,7 @@
 		<dependency>
 			<groupId>8b12e0c7-58c1-469d-9261-46a002ed8b12</groupId>
 			<artifactId>sys-smtp-api</artifactId>
-			<version>1.0.4</version>
+			<version>1.0.5</version>
 			<classifier>raml</classifier>
 			<type>zip</type>
 		</dependency>
